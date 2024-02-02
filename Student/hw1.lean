@@ -15,19 +15,27 @@ Below is the my version:
 def apply4 (α : Type) : (α → α) → (α → α)
   | f => fun a => (f ∘ (f ∘ (f ∘ (f)))) a
 
-
-
-def compn {α : Type} : Nat → (α → α) → (α → α)
+def compn' {α : Type} : Nat → (α → α) → (α → α)
   | Nat.zero, f => λ a => a
-  | (Nat.succ n'), f => λ a => f (compn n' f a)
+  | (Nat.succ n'), f => λ a => f (compn' n' f a)
 
-#eval (compn 5 Nat.succ) 0
+#eval (compn' 5 Nat.succ) 0
 
 def sq (n: Nat) := n * n
 
-#eval (compn 5 sq) 2
+#eval (compn' 5 sq) 2
 
 #check (@List)
+
+def compn {α : Type} : Nat → (α → α) → (α → α)
+  | Nat.zero, f => λ a => a
+  | (Nat.succ n'), f => f ∘ (compn n' f)
+
+def my_comp {α β γ : Type} : (β → γ) → (α → β) → (α → γ) --define second function's type first
+  --| g, f => g ∘ f
+  | g, f => λ a => (g (f a)) --lean infers a is type alpha from the return object definition
+
+
 
 /-!
 inductive List (α : Type u) where
