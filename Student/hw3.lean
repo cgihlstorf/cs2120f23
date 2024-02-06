@@ -1,3 +1,5 @@
+--Caroline Gihlstorf HW3---
+
 /-!
 #1
 
@@ -15,6 +17,16 @@ def dec': Nat → Nat
 #eval dec' 2    -- expect 1
 #eval dec' 1    -- expect 0
 #eval dec' 0    -- expect 0
+
+def dec2 : Nat → Nat
+  | Nat.zero => 0
+  | (Nat.succ Nat.zero) => 0
+  | (Nat.succ (Nat.succ n'')) => n''
+
+#eval dec2 0
+#eval dec2 2
+#eval dec2 5
+
 
 /-
 #2
@@ -40,6 +52,15 @@ def strlist2 : List String := ["", " ", "a", "ab", "abc"]
 #eval l2l String.length strlist2    -- expect [0, 1, 1, 2, 3]
 #eval l2l String.length emptylist   -- expect []
 
+/-!
+Done in class:
+-/
+
+#eval l2l Nat.succ [0,2,4]
+
+
+
+
 
 /-!
 #3
@@ -53,12 +74,26 @@ from which Lean can infer α.
 -/
 
 
-inductive PRFV {α : Type} where
-  | undefined : PRFV
-  | defined (a : α) : PRFV
+--Version from before class:--
 
-#check @PRFV.undefined Nat    -- expect PRFV
-#check PRFV.defined 3         -- Expect PRFV
+-- inductive PRFV {α : Type} where
+--   | undefined : PRFV
+--   | defined (a : α) : PRFV
+
+-- #check @PRFV.undefined Nat    -- expect PRFV
+-- #check PRFV.defined 3         -- Expect PRFV
+
+
+--Corrected version from class:--
+
+inductive PRFV (α : Type) --better to make arguments explicit
+| undefined
+| defined (a : α)
+
+def p1 : PRFV Nat := PRFV.undefined
+def p2 := PRFV.defined 1
+
+
 
 /-!
 #4
@@ -71,9 +106,18 @@ You will thus represent a partial function from Nat to Nat as a total function
 from Nat to PRFV Nat.
 -/
 
+--Version from before class:--
 def dec : Nat → PRFV Nat
   | Nat.zero => (PRFV)
   | (Nat.succ n') => PRFV n'
+
+--Version from class--
+
+def dec_class : Nat → PRFV Nat
+  | 0 => PRFV.undefined
+  | n' + 1 => PRFV.defined n'
+
+#reduce dec_class 2
 
 
 
@@ -102,9 +146,77 @@ PFRV α is "undefined" and true otherwise. The following test cases should then
 return the expected values.
 -/
 
+---Version from before class:---
+
 def isDef {α : Type} : PRFV α → Bool
   | PRFV.undefined => false
-  | PFRV.defined => true
+  | PRFV.defined => true
 
-#eval isDef (dec 0)   -- expect false
-#eval isDef (dec 1)   -- expect true
+---Version from class---
+
+def isDefClass : PRFV Nat → Bool
+  | PRFV.undefined => false
+  | _ => true
+
+#eval isDefClass (dec_class 0)   -- expect false
+#eval isDefClass (dec_class 1)   -- expect true
+
+
+/-!
+Fold function from class
+-/
+
+def foldr''' : (Nat → Nat → Nat) → Nat → List Nat → Nat
+  | _, id, List.nil => id --the itendity function element (teksn in as a parameter)
+  | op, id, h::t => (op h (foldr''' op id t))
+
+#reduce foldr''' Nat.add 0 [1,2,3,4,5]
+#reduce foldr''' Nat.mul 1 [1,2,3,4,5]
+
+#reduce foldr''' Nat.sub 0 [5,3,1]
+
+
+def fold_str : (List String) → String → String
+  | List.nil, id => id
+  | (List.cons h t), id => (String.append h (fold_str t id))
+
+
+def fold_str_corrected : (String → String → String) → (List String) → String → String
+  | _, List.nil, id => id
+  | op, (List.cons h t), id => (op h (fold_str t id)) --include operator as a parameter
+
+
+def strlist : List String := ["Water", "melon"]
+def str_id : String := ""
+
+#eval fold_str strlist str_id
+#eval fold_str_corrected String.append strlist str_id
+
+def foldr {α : Type}: (α → α → α) → α → (List α) → α --fold right
+  | _, id, [] => id
+  | op, id, (List.cons h t) => (op h (foldr op id t))
+
+
+--HW for 02/07/2024--
+--Reduce a list of strings to a Boolean --> true if all strings
+--in the list have even length--
+
+def combine : String → Bool → Bool
+ | str, lst_bool => ((String.length str) % 2 == 0) ∧ lst_bool
+
+def foldr' {α β : Type} : (α → β → β) → β → List α → β
+  | _, id, List.nil => id --id is true in the String -> Bool -> Bool example
+  | op, id, (h::t) => (op h (foldr' op id t))
+
+
+def even_str_list : List String := ["list", "of", "even", "things"]
+def non_even_str_list: List String := ["not", "all", "words", "are", "even"]
+def all_odd_list : List String  := ["all", "words", "are", "odd"]
+def empty_str_list : List String := [""]
+def empty_list : List String := []
+
+#eval foldr' combine true even_str_list     -- expect true
+#eval foldr' combine true non_even_str_list -- expect false
+#eval foldr' combine true all_odd_list      -- expect false
+#eval foldr' combine true empty_str_list    -- expect true
+#eval foldr' combine true empty_list        -- expect true
