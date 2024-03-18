@@ -1,5 +1,6 @@
 import Mathlib.Algebra.Group.Defs
 import Mathlib.GroupTheory.GroupAction.Defs
+import Mathlib.Algebra.AddTorsor
 /-!
 We now turn to formalization of mathematical structures
 using the rich collection of abstractions already defined
@@ -368,53 +369,46 @@ extends VAdd : Type (max u_10 u_11)
   vadd : G → P → P
   zero_vadd : ∀ (p : P), 0 +ᵥ p = p
   add_vadd : ∀ (g₁ g₂ : G) (p : P), g₁ + g₂ +ᵥ p = g₁ +ᵥ (g₂ +ᵥ p)
-=
+
+
 class VAdd (G : Type u) (P : Type v) : Type (max u v)
     vadd : G → P → P
 
 -/
 
---instaniate AddGroup for Rotations
-class AddGroup
-(R: Type Rotation)
-(S1: Type State)
-(S2: Type State)
-[VAdd S]
-
-
-
-
 /-! EXERCISE. Explain in English the meanings of the axioms
 for additive actions. Then implement AddAction for the Rotation type.
 -/
 
-def add_rot_state : Rotation → State → State
+def vadd_rot_state : Rotation → State → State
 | r0, s => s
 | r120, s0 => s120
 | r120, s120 => s240
 | r120, s240 => s0
 | r240, s0 => s240
-| r240, s120 =>  s0
+| r240, s120 => s0
 | r240, s240 => s120
 
-instance : VAdd Rotation State := ⟨ add_rot_state ⟩
+instance : VAdd Rotation State := ⟨ vadd_rot_state ⟩
 
 #check AddAction
 
-instance : AddAction Rotation State := {zero_vadd := sorry, add_vadd := sorry}
+instance : AddAction Rotation State := {
+    zero_vadd := sorry,
+    add_vadd := sorry
+  }
 
-#reduce (2 • r120) + (3 • r240) + (0 • r120)
+#reduce ((2 • r120) + (3 • r240) + (0 • r120)) +ᵥ r120
 
 #check AddGroup.mk
-
 
 /-!
 ## Torsors (of Point-like objects)
 
-Definition of subtraction of "positional" Tri_States.
+Definition of subtraction of positional States.
 On a clock, for example, you can subtract 3PM from
 5PM to get two hours: the duration that, when added
-to 3PM, gets you back to 5PM. Here a "clock" has
+to 3PM, gets you back to 5PM. Here our "clock" has
 only three positions.
 -/
 def sub_State : State → State → Rotation
@@ -428,3 +422,97 @@ def sub_State : State → State → Rotation
 | s240, s0 => r240
 | s240, s120 => r120
 | s240, s240 => r0
+
+
+#check AddTorsor
+
+/-!
+class AddTorsor (G : outParam (Type*)) (P : Type*) [outParam <| AddGroup G] extends AddAction G P,
+  VSub G P where
+  [nonempty : Nonempty P]
+  /-- Torsor subtraction and addition with the same element cancels out. -/
+  vsub_vadd' : ∀ p1 p2 : P, (p1 -ᵥ p2 : G) +ᵥ p2 = p1
+  /-- Torsor addition and subtraction with the same element cancels out. -/
+  vadd_vsub' : ∀ (g : G) (p : P), g +ᵥ p -ᵥ p = g
+#align add_torsor AddTorsor
+-/
+
+--Caroline Gihlstorf
+
+/-!
+Homework #1: Endow Rotation with the additional structure of an additive group.
+-/
+#check AddGroup.mk
+/-!
+AddGroup.mk.{u}
+  {A : Type u}
+  [toSubNegMonoid : SubNegMonoid A]
+  (add_left_neg : ∀ (a : A), -a + a = 0) :
+AddGroup A
+-/
+
+-- Hint:
+#check SubNegMonoid.mk
+/-!
+SubNegMonoid.mk.{u}
+  {G : Type u}
+  [toAddMonoid : AddMonoid G]
+  [toNeg : Neg G]
+  [toSub : Sub G]
+  (sub_eq_add_neg : ∀ (a b : G), a - b = a + -b := by intros; rfl) (zsmul : ℤ → G → G)
+  (zsmul_zero' : ∀ (a : G), zsmul 0 a = 0 := by intros; rfl)
+  (zsmul_succ' : ∀ (n : ℕ) (a : G), zsmul (Int.ofNat (Nat.succ n)) a = a + zsmul (Int.ofNat n) a := by intros; rfl)
+  (zsmul_neg' : ∀ (n : ℕ) (a : G), zsmul (Int.negSucc n) a = -zsmul (↑(Nat.succ n)) a := by intros; rfl) :
+SubNegMonoid G
+-/
+
+--Homework #1 Answer:
+
+instance : Neg Rotation := {
+  neg := sorry
+}
+
+instance : Sub Rotation := {
+  sub := sorry
+}
+
+--AddMonoid Rotation is defined previously
+instance : SubNegMonoid Rotation := {
+    sub_eq_add_neg := sorry
+    zsmul_zero' := sorry
+    zsmul_succ' := sorry
+    zsmul_neg' := sorry
+}
+
+instance : AddGroup Rotation := {
+  add_left_neg := sorry
+}
+
+/-!
+Homework #2: Endow State and Rotation with the additional structure of an
+additive torsor over that (additive) group.
+-/
+
+-- Hint: follow the same approach
+
+--Homework #2 Answer:
+
+--create instances of the requirements for AddTorsor
+instance : VSub Rotation State := ⟨ sub_State ⟩
+
+--#check Nonempty.mk
+instance : Nonempty State := sorry
+
+instance : AddTorsor Rotation State := {
+  vsub_vadd' := sorry
+  vadd_vsub' := sorry
+}
+
+/-!
+class AddTorsor (G : outParam (Type*)) (P : Type*) [outParam <| AddGroup G] extends AddAction G P,
+  VSub G P where
+  [nonempty : Nonempty P]
+  vsub_vadd' : ∀ p1 p2 : P, (p1 -ᵥ p2 : G) +ᵥ p2 = p
+  vadd_vsub' : ∀ (g : G) (p : P), g +ᵥ p -ᵥ p = g
+#align add_torsor AddTorsor
+-/
