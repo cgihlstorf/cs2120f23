@@ -152,4 +152,148 @@ example (P : Prop) : (P ∨ ¬ P) → (¬¬P → P) --can't derive a proof of P 
     | Or.inl p => λ nnp => p
     | Or.inr np => λ nnp => nomatch (nnp np) --(nnp np) returns False
 
+example (P Q : Prop): P ∧ Q → Q ∧ P :=
+--want a functiuon that converts a proof of p and q into a proof of q and p
+λ (h : P ∧ Q) => ⟨h.right, h.left⟩ --the angle brackets stand for And.intro (the constructor)
+
+--this is different notation for the example above
+example (P Q : Prop): P ∧ Q → Q ∧ P
+| And.intro p q => And.intro q p
+
+--this is also different notation for the example above
+example (P Q : Prop): P ∧ Q → Q ∧ P
+| ⟨p, q⟩ => ⟨q, p⟩
+
+example (P Q : Prop) : P ∧ Q → P ∨ Q
+| ⟨p, q⟩ => Or.inl p
+
+example (P Q : Prop) : P ∨ Q → Q ∨ P
+| Or.inl p => Or.inr p
+| Or.inr q => Or.inl q
+
+
 --- ∀ (P : Prop) , P ∨ ¬P
+
+
+example : ∀ (P : Prop), ¬¬P → P :=
+λ P nnp => _
+
+--takes in a proposition, outputs a proof of p or not p
+#check Classical.em --this is an example of a namespace
+
+def one_not_eq_zero (n : Nat): n = 1 → n ≠ 0 :=
+λ (neq1 : n = 1) => λ neq0 => by
+  rw [neq1] at neq0
+  cases neq0
+
+/-!
+Equality
+-/
+
+#check 1 = 0
+#check Eq 1 0
+
+#check Eq.refl 1
+
+example : 1 = 2 := Eq.refl 1 --proof that the input is equal to itself
+
+/-!
+inductive Eq : α → α → Prop where
+  | refl (a : α) : Eq a a
+-/
+
+def isEven (n : Nat): Prop := n % 2 == 0 --this is an equality proposition
+--if it's equal we have a prof from the proof constructor of equality
+--the presence of this proof is a proof of that proposition
+--try not to think in truth values
+
+--"predicates are just functions that yield parameterized propositions" K.S
+
+#check isEven 0
+#check isEven 1
+
+#check isEven 2
+#check isEven 3
+#check isEven 4
+#check isEven 5
+
+/-!
+### For all (∀)
+∀ (p : P), Q
+∀ (p : P), Q p --> here Q is a predicate applied to p
+-/
+
+example : ∀ (n : Nat), isEven n := _ --not true
+
+
+def zornz : ∀ (n : Nat), n = 0 ∨ n ≠ 0 := --this is an Or statement you could take Or.inl and Or.inr from
+λ n => match n with
+  | 0 => (Or.inl (Eq.refl 0)) --you could also say rfl
+  | (n' + 1) => (Or.inr (λ h => nomatch h)) --need proof of negation
+
+#reduce zornz 3
+
+#reduce isEven 0 --there is a proof here
+#reduce isEven 1 --different output type than the one above (there is no proof here)
+
+variable
+  (P : Type)
+  (Q : P → Prop) --this is a predicate
+  (R : Prop)
+  (t : P)
+
+#check P
+#check Q
+
+#check Q t
+#check ∀ (p : P), Q p
+
+#check ∀ (x : P), R --just an ordinary function
+--the above is a function of P to R but doesn't depend on P
+--like increment, just adds 1
+--example: input a value and return a list of 0's with length of that value (so like if input is 3 return a list of 3 0's)
+
+
+/-!
+### Exists (∃)
+-/
+
+--general form
+example : ∃ (p : P) , Q p := _ --"there exists some p that has propoerty Q"
+
+def exists_even_nat : ∃ (n : Nat), isEven n := ⟨ 2 , rfl ⟩  -- 2 is called a "witness"
+--I think rfl is saying that isEven n reduced to 0 = 0, since rfl is for equality
+--⟨ 2 , rfl ⟩ is called a dependent pair (?)
+
+--example : ∃ ( n : Nat), n ≠
+
+def foo' : (∃ (n : Nat), isEven n) → True
+| ⟨ n' , pf ⟩ => _
+
+example : ∃ (n : Nat), n ≠ 0 := ⟨ 5 , _ ⟩
+
+
+/-!
+### Equality — Revisited
+-/
+
+/-!
+inductive Eq : α → α → Prop where
+  | refl (a : α) : Eq a a
+-/
+
+--Lean reduced expressions
+example : 1 + 1 = 2 := rfl
+
+inductive IsEven : Nat → Prop
+| zero_is_even : IsEven 0
+| even_plus_2_even : ∀ (n : Nat), IsEven n → IsEven (n + 2)
+
+open IsEven
+example : IsEven 0 := zero_is_even
+example : IsEven 4 := even_plus_2_even 2 _ --finish this blank off
+
+
+
+
+--"building proofs as recursive data structures" 99% DQ K.S
