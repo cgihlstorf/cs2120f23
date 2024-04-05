@@ -291,7 +291,7 @@ inductive IsEven : Nat → Prop
 
 open IsEven
 example : IsEven 0 := zero_is_even
-example : IsEven 4 := even_plus_2_even 2 _ --finish this blank off
+example : IsEven 4 := (even_plus_2_even 2 (even_plus_2_even 0 (zero_is_even)))  --finish this blank off
 
 
 
