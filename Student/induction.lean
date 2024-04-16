@@ -1,21 +1,23 @@
 #check False.rec
 
+
 #check Bool.rec
 
-/-!
+/-
 Bool.rec.{u}
-  {motive : Bool → Sort u} --function of sort 1 or higher, predicate if sort 0 (Prop)
+  {motive : Bool → Sort u}
   (false : motive false)
   (true : motive true)
   (t : Bool) :
   motive t
 -/
 
-example : ∀ (b : Bool), !!b = b:=
+example : ∀ (b : Bool), !!b = b :=
 by
-  intros b --assume you have some arbitrary bool
-  induction b --induction principle for Bools, here it's the same as case analysis
-  repeat {rfl}
+  intros b
+  induction b
+  repeat { rfl }
+
 
 #check Nat.rec
 
@@ -28,16 +30,17 @@ Nat.rec.{u}
   motive t
 -/
 
---factorial
+
+-- answer for base case
 def fact_0 := 1
+
+-- given n and answer for n, returns answer for n + 1
 def fact_succ : (n : Nat) → (fact_n : Nat) → Nat
-| n, fact_n => fact_n * (n + 1)
+| n, fact_n =>  fact_n * (n + 1)
 
 #check (Nat.rec fact_0 fact_succ : Nat → Nat)
 
 #reduce (Nat.rec fact_0 fact_succ : Nat → Nat) 5
-
-
 
 #check List.rec
 
@@ -50,22 +53,74 @@ List.rec.{u_1, u}
   (t : List α) : motive t
 -/
 
-def list_step {α : Type} : α → List α → Nat → Nat := _
---fill in this step function as HW!
---and finishe the #reduce expression (also as HW)
---also use the recursor to compute the number of nodes in the tree
---cut and paste
+/-! HOMEWORK: complete the following examples -/
+--Caroline Gihlstorf--
 
-#reduce (List.rec 0 list_step)
+-- answer for base case
+def len_nil := 0
 
-def list_empty_len := 0
+-- inductive step-up function
+def len_cons : (h : α) → (t: List α) → (len_tail : Nat) → Nat
+| h, t, lt => lt + 1
 
+-- test: expect 3
+#reduce (List.rec 0 list_step : List Nat → Nat) [1,2,3]
 
-#check List Nat
+--Note: I changed "list_step" to "len_cons" here--
+-- test: expect 3
+#reduce (List.rec 0 len_cons : List Nat → Nat) [1,2,3]
+
 
 
 inductive Tree (α : Type) where
 | empty : Tree α
-| node (a : α) (l r : Tree α)
+| node (a : α) (l r : Tree α) : Tree α
+
+open Tree
 
 #check Tree.rec
+
+/-
+Format the definition of the induction principle for
+Tree in this comment block.
+
+Here:
+
+Tree.rec.{u}
+{α : Type}
+{motive : Tree α → Sort u}
+(empty : motive empty)
+(node : (a : α) → (l r : Tree α) → motive l → motive r → motive (node a l r))
+(t : Tree α) : motive t
+-/
+
+/-
+Define separate base value and step function here,
+applying it to the following tree, and show that your
+function procuces the right answer.
+-/
+
+-- here's a tree of natural numbers with three nodes
+def a_tree : Tree Nat :=
+  Tree.node
+    1
+    (Tree.node
+      2
+      empty
+      empty
+    )
+    (Tree.node
+      3
+      empty
+      empty
+    )
+
+-- 1. define answer for base case
+def empty_tree := 0
+
+-- 2. define step function
+def tree_step : (a : α) → (l r : Tree α) → (ml mr : Nat) → Nat
+| a, l, r, ml, mr => ml + mr + 1
+
+-- 3. compose them using Tree.rec and apply to a_tree, expecting 3
+#reduce (Tree.rec 0 tree_step : Tree Nat → Nat) a_tree
